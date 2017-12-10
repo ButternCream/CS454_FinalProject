@@ -125,50 +125,61 @@ def getStartingStates(dfa, alphabet, N):
 
 
 def main():
+    global DONE
     K = int(input("K = ")) # 13
     S = input("S = ")# Enter input like S = 2 5 (separated by spaces)
-    N = int(input("N = ")) # Perms length
+    N = int(input("Max Permutations = ")) # Perms length
     S = S.split()
     S = [int(x) for x in S]
-    return_values = list() # return values from threads
+    speedup_list = []
+    MAX = int(input("Number of Tests = "))
     dfa = build_dfa(K,S)
-    states = getStartingStates(dfa,S,N)
-    perms = itertools.product(S,repeat=N)
-    #print(states)
-    threads = []
-    perm_strings = []
+    for n in range(1,N+1):
+        print("Running with %s permutations." % str(n))
+        for i in range(MAX):
+            return_values = list() # return values from threads
+            states = getStartingStates(dfa,S,n)
+            perms = itertools.product(S,repeat=n)
+            #print(states)
+            threads = []
+            perm_strings = []
 
 
-    for p in perms:
-        perm_strings.append((''.join([str(x) for x in p])))
-        #print(p)
-    b = threading.Barrier(len(perm_strings))
-    for i,s in enumerate(states):
-        t = threading.Thread(target = find_string, args = (dfa, s, perm_strings[i], return_values, b))
-        threads.append(t)       
+            for p in perms:
+                perm_strings.append((''.join([str(x) for x in p])))
+                #print(p)
+            b = threading.Barrier(len(states))
+            for i,s in enumerate(states):
+                t = threading.Thread(target = find_string, args = (dfa, s, perm_strings[i], return_values, b))
+                threads.append(t)       
 
-    [t.start() for t in threads]
-    t0 = time.time()
-    global DONE
-    while not DONE:
-        continue
+            for t in threads:
+                t.start()
 
-    t1 = time.time()
-    p_total = t1-t0
-    print("Parallel Time: ",p_total)
-        
-    t0 = time.time()
-    s = find_string(dfa)
-    t1 = time.time()
-    s_total = t1-t0
-    print("Serial Time: ", s_total)
+            t0 = time.time()
 
-    speedup = s_total / p_total
+            while not DONE:
+                continue
 
-    print("Speedup: ", speedup)
-    print("Number of threads: ", len(threads))
-    #print(return_values)
-    #print(min(return_values, key=len))
+            t1 = time.time()
+            p_total = t1-t0
+            #print("Parallel Time: ",p_total)
+                
+            t0 = time.time()
+            s = find_string(dfa)
+            t1 = time.time()
+            s_total = t1-t0
+            #print("Serial Time: ", s_total)
+
+            speedup = s_total / p_total
+            speedup_list.append(speedup)
+
+            #print("Speedup: ", speedup)
+            #print("Number of threads: ", len(threads))
+            #print(return_values)
+            #print(min(return_values, key=len))
+
+        print(sum(speedup_list)/float(len(speedup_list)))
 
     
 main()
