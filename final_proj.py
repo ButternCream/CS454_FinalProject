@@ -11,7 +11,7 @@ import itertools
 import threading
 import sys
 import time
-import progressbar
+#import progressbar
 
 DONE = False
 
@@ -101,10 +101,11 @@ def find_string(dfa, start=0, perm="", return_values=None, b=None):
         return None # No possible integer, example: K = 4, S = [1,3,5]
     else:
         number = ""
-        '''while curr.parent != None:
+        seen = []
+        while curr.parent != None and curr.name not in seen:
             number += curr.parent_transition
+            seen.append(curr.name)
             curr = curr.parent
-        '''
         if return_values is not None:
             DONE = True
             return_values.append(perm+number[::-1])
@@ -135,6 +136,7 @@ def main():
     speedup_list = []
     MAX = int(input("Number of Tests = "))
     dfa = build_dfa(K,S)
+    print()
     for n in range(1,N+1):
         print("Running with %s permutations." % str(n))
         states = getStartingStates(dfa,S,n)
@@ -142,13 +144,18 @@ def main():
         perm_strings = []
         for p in perms:
             perm_strings.append((''.join([str(x) for x in p])))
-        bar = progressbar.ProgressBar(max_value=MAX)
+        print(perm_strings)
+        #bar = progressbar.ProgressBar(max_value=MAX)
         for _ in range(MAX):
             return_values = list() # return values from threads
-            #print(states)
             threads = []
-            b = threading.Barrier(len(states))
+            if len(states) <= 8:
+                b = threading.Barrier(len(states))
+            else:
+                b = threading.Barrier(8)
             for i,s in enumerate(states):
+                if i > 7:
+                    break
                 t = threading.Thread(target = find_string, args = (dfa, s, perm_strings[i], return_values, b))
                 threads.append(t)       
 
@@ -179,10 +186,10 @@ def main():
             #print("Speedup: ", speedup)
             #print(return_values)
             #print(min(return_values, key=len))
-            bar.update(_)
-
+            #bar.update(_)
         print("Speedup AVG: ", sum(speedup_list)/float(len(speedup_list)))
-        print("Number of threads: ", len(threads))
+        print("Number of Threads: ", len(threads))
+        print("Return Values: ", return_values)
         print()
     
 main()
