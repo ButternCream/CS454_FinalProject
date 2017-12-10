@@ -11,6 +11,7 @@ import itertools
 import threading
 import sys
 import time
+import progressbar
 
 DONE = False
 
@@ -136,18 +137,16 @@ def main():
     dfa = build_dfa(K,S)
     for n in range(1,N+1):
         print("Running with %s permutations." % str(n))
-        for i in range(MAX):
+        states = getStartingStates(dfa,S,n)
+        perms = itertools.product(S,repeat=n)
+        perm_strings = []
+        for p in perms:
+            perm_strings.append((''.join([str(x) for x in p])))
+        bar = progressbar.ProgressBar(max_value=MAX)
+        for _ in range(MAX):
             return_values = list() # return values from threads
-            states = getStartingStates(dfa,S,n)
-            perms = itertools.product(S,repeat=n)
             #print(states)
             threads = []
-            perm_strings = []
-
-
-            for p in perms:
-                perm_strings.append((''.join([str(x) for x in p])))
-                #print(p)
             b = threading.Barrier(len(states))
             for i,s in enumerate(states):
                 t = threading.Thread(target = find_string, args = (dfa, s, perm_strings[i], return_values, b))
@@ -171,15 +170,19 @@ def main():
             s_total = t1-t0
             #print("Serial Time: ", s_total)
 
+            if p_total == 0:
+                p_total = 1.0e-10
+
             speedup = s_total / p_total
             speedup_list.append(speedup)
 
             #print("Speedup: ", speedup)
-            #print("Number of threads: ", len(threads))
             #print(return_values)
             #print(min(return_values, key=len))
+            bar.update(_)
 
-        print(sum(speedup_list)/float(len(speedup_list)))
-
+        print("Speedup AVG: ", sum(speedup_list)/float(len(speedup_list)))
+        print("Number of threads: ", len(threads))
+        print()
     
 main()
